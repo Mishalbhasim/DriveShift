@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LiberationSans SDF 2
+  m_Shader: {fileID: 4800000, guid: 68e6db2ebdc24f95958faec2be5558d6, type: 3}
+  m_Parent: {fileID: 2100000, guid: e40ae62b085968c4a8700f47fd0fd3c2, type: 2}
+  m_ModifiedSerializedProperties: 2
+  m_ValidKeywords:
+  - GLOW_ON
+  m_InvalidKeywords: []
+  m_LightmapFlags: 1
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _FaceDilate: 0.2
+    - _GlowInner: 0
+    - _GlowOffset: 1
+    - _GlowOuter: 0.512
+    - _GlowPower: 0.519
+    - _OutlineWidth: 0.195
+    - _ScaleRatioA: 0.9
+    - _ScaleRatioB: 0.3645833
+    - _ScaleRatioC: 0.55125
+    - _VertexOffsetX: 0.1
+    - _VertexOffsetY: 0.1
+    m_Colors:
+    - _FaceColor: {r: 0.0023498535, g: 1, b: 0, a: 1}
+    - _GlowColor: {r: 0, g: 0.050514147, b: 4.237095, a: 0.64705884}
+    - _OutlineColor: {r: 0, g: 0.062475204, b: 1, a: 1}
+  m_BuildTextureStacks: []

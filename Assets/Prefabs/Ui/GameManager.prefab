@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &372701948342592889
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6417553661921493504}
+  - component: {fileID: 3228217553551385487}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6417553661921493504
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 372701948342592889}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 32.07033, y: 0.80104744, z: 40.978973}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3228217553551385487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 372701948342592889}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e63c49f57fda064eb82f05e69578327, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  timeLimit: 60
+  maxCrashes: 5
+  gameOverPanel: {fileID: 0}
+  nextLevelPanel: {fileID: 0}
+  hudTimerText: {fileID: 0}
+  hudCrashText: {fileID: 0}
+  timeLineSlider: {fileID: 0}
+  gameOverTimeText: {fileID: 0}
+  gameOverCrashText: {fileID: 0}
+  gameOverReasonText: {fileID: 0}
+  nextLevelTimeText: {fileID: 0}
+  nextLevelCrashText: {fileID: 0}
+  nextLevelScoreText: {fileID: 0}
+  lastLevelIndex: 10
+  nextLevelButton: {fileID: 0}

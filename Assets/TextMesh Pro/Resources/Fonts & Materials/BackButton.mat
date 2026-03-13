@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: BackButton
+  m_Shader: {fileID: 4800000, guid: 68e6db2ebdc24f95958faec2be5558d6, type: 3}
+  m_Parent: {fileID: 2100000, guid: 8742139cae1b24f4ba23adb0d2df875c, type: 2}
+  m_ModifiedSerializedProperties: 2
+  m_ValidKeywords:
+  - GLOW_ON
+  - OUTLINE_ON
+  m_InvalidKeywords: []
+  m_LightmapFlags: 5
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _FaceDilate: 0.376
+    - _GlowInner: 0.151
+    - _GlowOffset: -0.258
+    - _GlowOuter: 0.503
+    - _GlowPower: 0
+    - _OutlineSoftness: 0.138
+    - _OutlineWidth: 0.371
+    - _ScaleRatioA: 0.83916086
+    - _ScaleRatioB: 0.39285
+    - _ScaleRatioC: 0.39285
+    - _VertexOffsetX: 0
+    - _VertexOffsetY: 0
+    m_Colors:
+    - _FaceColor: {r: 0.08435953, g: 1, b: 0, a: 1}
+    - _GlowColor: {r: 0.13253415, g: 1, b: 0, a: 0.5}
+    - _OutlineColor: {r: 0.12878776, g: 1, b: 0, a: 1}
+  m_BuildTextureStacks: []
