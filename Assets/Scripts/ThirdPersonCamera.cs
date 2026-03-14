@@ -17,17 +17,13 @@ public class SmoothThirdPersonCamera : MonoBehaviour
     public float distance = 6f;
     public float height = 3.5f;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Inspector — Reverse Mode
-    // ─────────────────────────────────────────────────────────────────────────
+   
 
     [Header("Reverse Mode")]
     public float reverseDistance = 7.5f;
     public float reverseHeight = 4.5f;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Inspector — Speed-Adaptive Distance
-    // ─────────────────────────────────────────────────────────────────────────
+    
 
     [Header("Speed-Adaptive Distance")]
     [Tooltip("Camera pulls in when nearly stopped — better parking precision.")]
@@ -39,9 +35,7 @@ public class SmoothThirdPersonCamera : MonoBehaviour
     [Tooltip("Hard cap — the camera NEVER goes further than this, regardless of speed. Key setting for a parking sim.")]
     public float maxCameraDistance = 7f;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Inspector — Overhead / Parking-Assist View
-    // ─────────────────────────────────────────────────────────────────────────
+   
 
     [Header("Overhead / Parking-Assist View")]
     [Tooltip("Key to toggle the top-down overhead view.")]
@@ -52,17 +46,12 @@ public class SmoothThirdPersonCamera : MonoBehaviour
     public float overheadTiltAngle = 80f;
     public float overheadDistance = 2f;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Inspector — Turn Offset (Lookahead)
-    // ─────────────────────────────────────────────────────────────────────────
 
     [Header("Turn Offset (Lookahead)")]
     public float turnOffsetAmount = 1.5f;
     public float offsetSmoothTime = 0.2f;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Inspector — Smoothing
-    // ─────────────────────────────────────────────────────────────────────────
+
 
     [Header("Camera Smoothing")]
     public float positionSmoothTime = 0.15f;
@@ -71,9 +60,7 @@ public class SmoothThirdPersonCamera : MonoBehaviour
     [Tooltip("How fast the internal forward vector tracks the car's nose.")]
     public float forwardSmoothSpeed = 5f;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Inspector — Dynamic FOV
-    // ─────────────────────────────────────────────────────────────────────────
+    
 
     [Header("Dynamic FOV")]
     [Tooltip("Animates FOV with speed. Works with physical camera (focal length) too.")]
@@ -87,18 +74,14 @@ public class SmoothThirdPersonCamera : MonoBehaviour
     public float maxSpeedForFOV = 15f;
     public float fovSmoothTime = 0.4f;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Inspector — Obstacle Avoidance
-    // ─────────────────────────────────────────────────────────────────────────
+    
 
     [Header("Obstacle Avoidance")]
     public LayerMask obstacleMask;
     [Tooltip("Push-back from surface when occluded.")]
     public float obstacleOffset = 0.4f;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Inspector — HDRP Settings
-    // ─────────────────────────────────────────────────────────────────────────
+    
 
     [Header("HDRP Antialiasing")]
     [Tooltip("AA while driving. SMAA = crisp edges on the car body and road markings.")]
@@ -109,17 +92,13 @@ public class SmoothThirdPersonCamera : MonoBehaviour
     public HDAdditionalCameraData.AntialiasingMode overheadAA =
         HDAdditionalCameraData.AntialiasingMode.TemporalAntialiasing;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Inspector — Input
-    // ─────────────────────────────────────────────────────────────────────────
+    
 
     [Header("Camera Reset")]
     [Tooltip("Instantly snaps the camera behind the car.")]
     public KeyCode resetKey = KeyCode.R;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Private state
-    // ─────────────────────────────────────────────────────────────────────────
+    
 
     private Camera cam;
     private HDAdditionalCameraData hdCam;
@@ -134,11 +113,9 @@ public class SmoothThirdPersonCamera : MonoBehaviour
     private float currentFOV;
     private float fovVelocity;
     private bool isOverheadMode;
-    private bool isPhysicalCamera;   // cached once — avoids per-frame property check
+    private bool isPhysicalCamera;   
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Unity lifecycle
-    // ─────────────────────────────────────────────────────────────────────────
+    
 
     void Start()
     {
@@ -153,14 +130,13 @@ public class SmoothThirdPersonCamera : MonoBehaviour
         hdCam = GetComponent<HDAdditionalCameraData>();
         carRb = target.GetComponent<Rigidbody>();
 
-        // ── HDRP one-time setup ──────────────────────────────────────────────
-        // Prevent NaN pixels causing bloom blowout on scene load
+       
         hdCam.stopNaNs = true;
 
-        // Cache physical camera mode (HDRP cameras created via the menu are physical by default)
+       
         isPhysicalCamera = cam.usePhysicalProperties;
 
-        // ── Initialise smoothed state ────────────────────────────────────────
+        
         smoothedForward = target.forward;
         smoothedTargetPos = target.position;
         rotDerivative = Quaternion.identity;
@@ -177,12 +153,12 @@ public class SmoothThirdPersonCamera : MonoBehaviour
 
         HandleInput();
 
-        // ── 1. Smooth reference transform ───────────────────────────────────
+        
         float fwdT = forwardSmoothSpeed * Time.deltaTime;
         smoothedTargetPos = Vector3.Lerp(smoothedTargetPos, target.position, fwdT);
         smoothedForward = Vector3.Slerp(smoothedForward, target.forward, fwdT);
 
-        // ── 2. Car velocity — Unity 2022 Rigidbody API ───────────────────────
+        
         float carSpeed = 0f;
         float forwardVel = 0f;
         if (carRb != null)
@@ -192,7 +168,7 @@ public class SmoothThirdPersonCamera : MonoBehaviour
         }
         bool isReversing = forwardVel < -0.1f;
 
-        // ── 3. Overhead parking-assist view ──────────────────────────────────
+        
         if (isOverheadMode)
         {
             UpdateOverheadView();
@@ -200,13 +176,13 @@ public class SmoothThirdPersonCamera : MonoBehaviour
             return;
         }
 
-        // ── 4. Lateral turn lookahead ─────────────────────────────────────────
+        
         float steerInput = Input.GetAxis("Horizontal");
         float targetOffset = steerInput * turnOffsetAmount;
         currentTurnOffset = Mathf.SmoothDamp(currentTurnOffset, targetOffset,
                                                ref turnOffsetVelocity, offsetSmoothTime);
 
-        // ── 5. Desired distance & height ──────────────────────────────────────
+        
         float camDist = isReversing ? reverseDistance : distance;
         float camH = isReversing ? reverseHeight : height;
 
@@ -217,17 +193,16 @@ public class SmoothThirdPersonCamera : MonoBehaviour
             camH = Mathf.Lerp(camH * 0.75f, camH, t);
         }
 
-        // Hard cap — prevents the camera ever pulling away like a racing game.
-        // maxCameraDistance is the single most important tuning value for a parking sim.
+        
         camDist = Mathf.Min(camDist, maxCameraDistance);
 
-        // ── 6. Desired camera position ────────────────────────────────────────
+        
         Vector3 desiredPos = smoothedTargetPos
                            - smoothedForward * camDist
                            + Vector3.up * camH
                            + target.right * currentTurnOffset;
 
-        // ── 7. Obstacle avoidance ─────────────────────────────────────────────
+        
         Vector3 castOrigin = smoothedTargetPos + Vector3.up * 1f;
         if (obstacleMask != 0 &&
             Physics.Linecast(castOrigin, desiredPos, out RaycastHit hit, obstacleMask))
@@ -235,23 +210,21 @@ public class SmoothThirdPersonCamera : MonoBehaviour
             desiredPos = hit.point + hit.normal * obstacleOffset;
         }
 
-        // ── 8. Apply smoothed position ────────────────────────────────────────
+        
         transform.position = Vector3.SmoothDamp(transform.position, desiredPos,
                                                  ref posVelocity, positionSmoothTime);
 
-        // ── 9. Apply smoothed rotation ────────────────────────────────────────
+        
         Vector3 lookAt = smoothedTargetPos + smoothedForward * 1.5f + Vector3.up * 0.8f;
         Quaternion targetRot = Quaternion.LookRotation(lookAt - transform.position);
         transform.rotation = SmoothDampQuaternion(transform.rotation, targetRot,
                                                     ref rotDerivative, rotationSmoothTime);
 
-        // ── 10. Dynamic FOV ───────────────────────────────────────────────────
+        
         UpdateFOV(carSpeed);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Overhead view
-    // ─────────────────────────────────────────────────────────────────────────
+    
 
     void UpdateOverheadView()
     {
@@ -268,9 +241,7 @@ public class SmoothThirdPersonCamera : MonoBehaviour
                                                   ref rotDerivative, rotationSmoothTime * 1.5f);
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Dynamic FOV — Physical Camera aware
-    // ─────────────────────────────────────────────────────────────────────────
+    
 
     void UpdateFOV(float speed)
     {
@@ -285,19 +256,14 @@ public class SmoothThirdPersonCamera : MonoBehaviour
         ApplyFOV(currentFOV);
     }
 
-    /// <summary>
-    /// Applies a vertical FOV to the camera, handling both standard and HDRP
-    /// physical camera modes.  Physical cameras expose focal length (mm), not
-    /// a raw FOV angle — setting cam.fieldOfView has no effect on them.
-    /// </summary>
+
     void ApplyFOV(float fov)
     {
         if (cam == null) return;
 
         if (isPhysicalCamera)
         {
-            // vertical FOV  →  focal length
-            // focalLength = (sensorHeight * 0.5) / tan(fov * 0.5)
+            
             float halfRad = fov * 0.5f * Mathf.Deg2Rad;
             cam.focalLength = (cam.sensorSize.y * 0.5f) / Mathf.Tan(halfRad);
         }
@@ -307,9 +273,7 @@ public class SmoothThirdPersonCamera : MonoBehaviour
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  HDRP helpers
-    // ─────────────────────────────────────────────────────────────────────────
+    
 
     void ApplyAntialiasing()
     {
@@ -317,9 +281,6 @@ public class SmoothThirdPersonCamera : MonoBehaviour
         hdCam.antialiasing = isOverheadMode ? overheadAA : drivingAA;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Input
-    // ─────────────────────────────────────────────────────────────────────────
 
     void HandleInput()
     {
@@ -333,11 +294,7 @@ public class SmoothThirdPersonCamera : MonoBehaviour
             SnapBehindCar();
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Public API
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /// <summary>Instantly snaps the camera to the default behind-car position.</summary>
+    
     public void SnapBehindCar()
     {
         if (!target) return;
@@ -353,18 +310,14 @@ public class SmoothThirdPersonCamera : MonoBehaviour
         posVelocity = Vector3.zero;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Framerate-independent quaternion SmoothDamp
-    //  Unity has no built-in Quaternion.SmoothDamp — this mirrors
-    //  the critically-damped spring used by Vector3.SmoothDamp.
-    // ─────────────────────────────────────────────────────────────────────────
+   
 
     static Quaternion SmoothDampQuaternion(Quaternion current, Quaternion target,
                                             ref Quaternion deriv, float smoothTime)
     {
         if (Time.deltaTime < Mathf.Epsilon) return current;
 
-        // Flip target so we always take the shortest rotation arc
+        
         if (Quaternion.Dot(current, target) < 0f)
         {
             target.x = -target.x;
@@ -387,7 +340,7 @@ public class SmoothThirdPersonCamera : MonoBehaviour
         float dt = Time.deltaTime;
         float omega = 2f / smoothTime;
         float x = omega * dt;
-        // Pade approximant of e^(-omega*dt) — avoids Mathf.Exp overhead
+        
         float e = 1f / (1f + x + 0.48f * x * x + 0.235f * x * x * x);
 
         Vector4 change = cur - tgt;

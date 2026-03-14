@@ -43,7 +43,7 @@ public class ParkingZone : MonoBehaviour
                     if (stopTimer >= timeToWait)
                     {
                         // Pass the alignment to the manager for the score calculation
-                        ParkingGameManager.Instance.TriggerLevelComplete(alignment);
+                        GameManager.Instance.TriggerLevelComplete(alignment);
                         isCarInside = false;
                     }
                 }

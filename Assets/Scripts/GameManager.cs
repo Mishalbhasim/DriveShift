@@ -1,10 +1,11 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
-public class ParkingGameManager : MonoBehaviour
+public class GameManager : MonoBehaviour
 {
-    public static ParkingGameManager Instance { get; private set; }
+    public static GameManager Instance { get; private set; }
 
     [Header("Level Settings")]
     public float timeLimit = 60f;
@@ -55,33 +56,32 @@ public class ParkingGameManager : MonoBehaviour
         currentTime = timeLimit;
         crashCount = 0;
 
+
         if (gameOverPanel) gameOverPanel.SetActive(false);
         if (nextLevelPanel) nextLevelPanel.SetActive(false);
 
         UpdateHUD();
+        StartCoroutine(TimerRoutine());
     }
 
-    void Update()
-    {
-        if (isGameActive)
-        {
-            HandleTimer();
-        }
-    }
+   
 
-    void HandleTimer()
+    IEnumerator TimerRoutine()
     {
-        if (currentTime > 0)
+        while (currentTime > 0 && isGameActive)
         {
             currentTime -= Time.deltaTime;
             UpdateTimerDisplay(hudTimerText, currentTime);
+            yield return null;
         }
-        else
+
+        if (currentTime <= 0)
         {
             currentTime = 0;
             TriggerGameOver("OUT OF TIME");
         }
     }
+
 
     public void AddCrash()
     {
@@ -150,7 +150,7 @@ public class ParkingGameManager : MonoBehaviour
         }
     }
 
-    // --- BUTTON FUNCTIONS ---
+    
 
     public void RestartLevel()
     {

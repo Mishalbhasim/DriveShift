@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.AI;
+using Mono.Cecil.Cil;
 
 public class CarSpawner : MonoBehaviour
 {
@@ -44,7 +45,7 @@ public class CarSpawner : MonoBehaviour
             return;
         }
 
-       
+
         Collider[] hits = Physics.OverlapSphere(spawnNode.transform.position, spawnCheckRadius);
         foreach (Collider hit in hits)
         {
@@ -52,7 +53,7 @@ public class CarSpawner : MonoBehaviour
                 return;
         }
 
-        
+
         NavMeshHit navHit;
         if (!NavMesh.SamplePosition(spawnNode.transform.position, out navHit, 5f, NavMesh.AllAreas))
         {
@@ -65,13 +66,13 @@ public class CarSpawner : MonoBehaviour
 
     IEnumerator SpawnCarAfterDelay(RoadNode spawnNode, Vector3 spawnPosition)
     {
-        
+
         yield return null;
         yield return null;
 
         GameObject selectedCar = carPrefabs[Random.Range(0, carPrefabs.Length)];
 
-        
+
         GameObject car = Instantiate(selectedCar, spawnPosition, spawnNode.transform.rotation);
         car.name = selectedCar.name + "_Car";
 
@@ -81,11 +82,11 @@ public class CarSpawner : MonoBehaviour
         if (agent == null) { Debug.LogError(car.name + ": Missing NavMeshAgent!"); Destroy(car); yield break; }
         if (ai == null) { Debug.LogError(car.name + ": Missing AICar!"); Destroy(car); yield break; }
 
-        
+
         yield return null;
         yield return null;
 
-        
+
         if (!agent.isOnNavMesh)
         {
             agent.enabled = false;
@@ -94,28 +95,28 @@ public class CarSpawner : MonoBehaviour
             yield return null;
         }
 
-        
+
         if (!agent.isOnNavMesh)
         {
             Debug.LogError(car.name + ": Failed to attach to NavMesh at " + spawnPosition +
-                           ". Make sure your spawn nodes are placed ON the blue NavMesh surface.");
+                   ". Make sure your spawn nodes are placed ON the blue NavMesh surface.");
             Destroy(car);
             yield break;
         }
 
-        
+
         agent.Warp(spawnPosition);
 
-        
+
         ai.currentNode = spawnNode;
 
-         
+
         CarDestroyNotifier notifier = car.AddComponent<CarDestroyNotifier>();
         notifier.spawner = this;
 
         currentCars++;
-        //Debug.Log("Car spawned: " + car.name + " | isOnNavMesh: " + agent.isOnNavMesh + " | Total: " + currentCars);
-    }
+        //Debug.Log("Car spawned: " + car.name + " | isOnNavMesh: " + agent.isOnNavMesh + " | Total: " + currentCars);
+    }
 
     public void OnCarDestroyed()
     {

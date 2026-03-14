@@ -1,9 +1,36 @@
+# --- Unity Temporary / Generated Files ---
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
 /[Bb]uild/
+/[Bb]uilds/
 /[Ll]ogs/
 /[MemoryCaptures]/
-/.vs/
+/[Uu]serSettings/
+
+# --- Visual Studio / IDE Files ---
+.vs/
+.gradle/
+ExportedObj/
+.consulo/
 *.csproj
+*.unityproj
 *.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svclog
+*.com.unity.ide.visualstudio
+
+# --- OS Generated ---
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+desktop.ini
+
+# --- Asset Store Tracking ---
+/[Aa]ssets/AssetStoreTools*
