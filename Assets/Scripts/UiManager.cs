@@ -1,25 +1,63 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using TMPro;
 
 public class UIManager : MonoBehaviour
 {
-    public void RestartGame()
+    public static UIManager Instance;
+
+    [Header("HUD")]
+    public TextMeshProUGUI timerText;
+    public TextMeshProUGUI crashText;
+
+    [Header("Panels")]
+    public GameObject gameOverPanel;
+    public GameObject levelCompletePanel;
+
+    [Header("Game Over Text")]
+    public TextMeshProUGUI gameOverTimeText;
+    public TextMeshProUGUI gameOverCrashText;
+    public TextMeshProUGUI gameOverReasonText;
+
+    [Header("Level Complete Text")]
+    public TextMeshProUGUI levelTimeText;
+    public TextMeshProUGUI levelCrashText;
+    public TextMeshProUGUI levelScoreText;
+
+    void Awake()
     {
-        Time.timeScale = 1f; 
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        Instance = this;
+
+        if (gameOverPanel) gameOverPanel.SetActive(false);
+        if (levelCompletePanel) levelCompletePanel.SetActive(false);
     }
 
-    public void GoToMainMenu()
+    public void UpdateTimer(string time)
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene("MainMenu");
+        if (timerText)
+            timerText.text = time;
     }
 
-    public void LoadNextLevel()
+    public void UpdateCrash(int crashCount)
     {
-        Time.timeScale = 1f;
+        if (crashText)
+            crashText.text = "Crashes: " + crashCount;
+    }
 
-        int currentIndex = SceneManager.GetActiveScene().buildIndex;
-        SceneManager.LoadScene(currentIndex + 1);
+    public void ShowGameOver(string time, int crashes, string reason)
+    {
+        gameOverPanel.SetActive(true);
+
+        gameOverTimeText.text = time;
+        gameOverCrashText.text = "CRASHES: " + crashes;
+        gameOverReasonText.text = "(" + reason + ")";
+    }
+
+    public void ShowLevelComplete(string time, int crashes, int score)
+    {
+        levelCompletePanel.SetActive(true);
+
+        levelTimeText.text = time;
+        levelCrashText.text = "CRASHES: " + crashes;
+        levelScoreText.text = "SCORE: " + score;
     }
 }

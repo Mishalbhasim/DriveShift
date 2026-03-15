@@ -5,20 +5,52 @@ public class AICar : MonoBehaviour
 {
     public RoadNode currentNode;
 
+    public enum CarState
+    {
+        Driving,
+        Waiting
+    }
+
+    private CarState currentState;
+
     [Header("Obstacle Detection")]
     public float detectionDistance = 3f;
     public float waitTime = 1.5f;
 
     private NavMeshAgent agent;
     private float waitTimer = 0f;
-    private bool isWaiting = false;
+    
+
+
+    
+
 
     void Start()
     {
-        agent = GetComponent<NavMeshAgent>();
-
         
         StartCoroutine(InitWithDelay());
+    }
+
+    void OnEnable()
+    {
+        agent = GetComponent<NavMeshAgent>();
+
+        agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+        agent.avoidancePriority = Random.Range(30, 70);
+
+        agent.isStopped = false;
+        waitTimer = 0f;
+
+        currentState = CarState.Driving;
+    }
+
+    void OnDisable()
+    {
+        if (agent != null && agent.isOnNavMesh)
+        {
+            agent.ResetPath();
+            agent.isStopped = true;
+        }
     }
 
     System.Collections.IEnumerator InitWithDelay()
@@ -38,26 +70,44 @@ public class AICar : MonoBehaviour
 
     void Update()
     {
-        
         if (!agent.isOnNavMesh) return;
 
-        CheckForObstacle();
-
-        if (isWaiting)
+        switch (currentState)
         {
-            waitTimer += Time.deltaTime;
-            if (waitTimer >= waitTime)
-            {
-                isWaiting = false;
-                waitTimer = 0f;
-                agent.isStopped = false;
-            }
-            return;
+            case CarState.Driving:
+                DrivingState();
+                break;
+
+            case CarState.Waiting:
+                WaitingState();
+                break;
         }
 
         if (!agent.pathPending && agent.remainingDistance < 1f)
         {
             MoveToNextNode();
+        }
+    }
+
+    void DrivingState()
+    {
+        CheckForObstacle();
+
+        if (!agent.pathPending && agent.remainingDistance < 1f)
+        {
+            MoveToNextNode();
+        }
+    }
+
+    void WaitingState()
+    {
+        waitTimer += Time.deltaTime;
+
+        if (waitTimer >= waitTime)
+        {
+            waitTimer = 0f;
+            agent.isStopped = false;
+            currentState = CarState.Driving;
         }
     }
 
@@ -70,11 +120,11 @@ public class AICar : MonoBehaviour
 
         if (Physics.Raycast(origin, transform.forward, out hit, detectionDistance))
         {
-            if (hit.collider.GetComponent<AICar>() != null ||
+            if (hit.collider.GetComponentInParent<AICar>() != null ||
                 hit.collider.CompareTag("Player"))
             {
                 agent.isStopped = true;
-                isWaiting = true;
+                currentState = CarState.Waiting;
                 return;
             }
         }

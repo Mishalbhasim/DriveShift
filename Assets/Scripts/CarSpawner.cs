@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.AI;
-using Mono.Cecil.Cil;
+
 
 public class CarSpawner : MonoBehaviour
 {
@@ -70,17 +70,36 @@ public class CarSpawner : MonoBehaviour
         yield return null;
         yield return null;
 
-        GameObject selectedCar = carPrefabs[Random.Range(0, carPrefabs.Length)];
+        GameObject car = AICarPool.Instance.GetCar();
 
+        if (car == null)
+        {
+            Debug.LogWarning("CarPool empty!");
+            yield break;
+        }
 
-        GameObject car = Instantiate(selectedCar, spawnPosition, spawnNode.transform.rotation);
-        car.name = selectedCar.name + "_Car";
+        car.transform.position = spawnPosition;
+        car.transform.rotation = spawnNode.transform.rotation;
 
         NavMeshAgent agent = car.GetComponent<NavMeshAgent>();
         AICar ai = car.GetComponent<AICar>();
 
-        if (agent == null) { Debug.LogError(car.name + ": Missing NavMeshAgent!"); Destroy(car); yield break; }
-        if (ai == null) { Debug.LogError(car.name + ": Missing AICar!"); Destroy(car); yield break; }
+        agent.Warp(spawnPosition);
+        agent.isStopped = false;
+
+        if (agent == null)
+        {
+            Debug.LogError(car.name + ": Missing NavMeshAgent!");
+            AICarPool.Instance.ReturnCar(car);
+            yield break;
+        }
+
+        if (ai == null)
+        {
+            Debug.LogError(car.name + ": Missing AICar!");
+            AICarPool.Instance.ReturnCar(car);
+            yield break;
+        }
 
 
         yield return null;
@@ -100,7 +119,7 @@ public class CarSpawner : MonoBehaviour
         {
             Debug.LogError(car.name + ": Failed to attach to NavMesh at " + spawnPosition +
                    ". Make sure your spawn nodes are placed ON the blue NavMesh surface.");
-            Destroy(car);
+            AICarPool.Instance.ReturnCar(car);
             yield break;
         }
 
@@ -111,8 +130,7 @@ public class CarSpawner : MonoBehaviour
         ai.currentNode = spawnNode;
 
 
-        CarDestroyNotifier notifier = car.AddComponent<CarDestroyNotifier>();
-        notifier.spawner = this;
+        
 
         currentCars++;
         //Debug.Log("Car spawned: " + car.name + " | isOnNavMesh: " + agent.isOnNavMesh + " | Total: " + currentCars);

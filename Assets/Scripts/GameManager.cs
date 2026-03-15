@@ -12,43 +12,30 @@ public class GameManager : MonoBehaviour
     public int maxCrashes = 5;
     private float currentTime;
     private int crashCount = 0;
-    private bool isGameActive = true;
-
-    [Header("UI Panels")]
-    public GameObject gameOverPanel;
-    public GameObject nextLevelPanel;
-
-    [Header("HUD References")]
-    public TextMeshProUGUI hudTimerText;
-    public TextMeshProUGUI hudCrashText;
-
-    [Header("Game Over Panel Text")]
-    public TextMeshProUGUI gameOverTimeText;
-    public TextMeshProUGUI gameOverCrashText;
-    public TextMeshProUGUI gameOverReasonText;
-
-    [Header("Next Level Panel Text")]
-    public TextMeshProUGUI nextLevelTimeText;
-    public TextMeshProUGUI nextLevelCrashText;
-    public TextMeshProUGUI nextLevelScoreText;
-
+    private GameState currentState;
+    Coroutine timerRoutine;
+    
     [Header("Final Level Settings")]
     public int lastLevelIndex = 10;
     public GameObject nextLevelButton;
 
-    private void Awake()
+
+    public enum GameState
+    {
+        Playing,
+        GameOver,
+        LevelComplete
+    }
+
+    void Awake()
     {
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
-        }
-        else
-        {
-            Instance = this;
+            return;
         }
 
-        
-        Time.timeScale = 1f;
+        Instance = this;
     }
 
     void Start()
@@ -56,22 +43,22 @@ public class GameManager : MonoBehaviour
         currentTime = timeLimit;
         crashCount = 0;
 
+        currentState = GameState.Playing;
 
-        if (gameOverPanel) gameOverPanel.SetActive(false);
-        if (nextLevelPanel) nextLevelPanel.SetActive(false);
+
 
         UpdateHUD();
-        StartCoroutine(TimerRoutine());
+        timerRoutine = StartCoroutine(TimerRoutine());
     }
 
-   
+
 
     IEnumerator TimerRoutine()
     {
-        while (currentTime > 0 && isGameActive)
+        while (currentTime > 0 && currentState == GameState.Playing)
         {
             currentTime -= Time.deltaTime;
-            UpdateTimerDisplay(hudTimerText, currentTime);
+            UIManager.Instance.UpdateTimer(FormatTime(currentTime));
             yield return null;
         }
 
@@ -85,7 +72,7 @@ public class GameManager : MonoBehaviour
 
     public void AddCrash()
     {
-        if (!isGameActive) return;
+        if (currentState != GameState.Playing) return;
 
         crashCount++;
         UpdateHUD();
@@ -98,7 +85,7 @@ public class GameManager : MonoBehaviour
 
     void UpdateHUD()
     {
-        if (hudCrashText != null) hudCrashText.text = "Crashes: " + crashCount;
+        UIManager.Instance.UpdateCrash(crashCount);
     }
 
     string FormatTime(float time)
@@ -109,48 +96,50 @@ public class GameManager : MonoBehaviour
         return string.Format("Time: {0:00}:{1:00}", minutes, seconds);
     }
 
-    void UpdateTimerDisplay(TextMeshProUGUI textTarget, float time)
-    {
-        if (textTarget != null) textTarget.text = FormatTime(time);
-    }
+
 
     public void TriggerGameOver(string reason)
     {
-        if (!isGameActive) return;
-        isGameActive = false;
+        if (currentState != GameState.Playing) return;
 
-        if (gameOverTimeText) gameOverTimeText.text = FormatTime(timeLimit - currentTime);
-        if (gameOverCrashText) gameOverCrashText.text = "CRASHES: " + crashCount;
-        if (gameOverReasonText) gameOverReasonText.text = "(" + reason + ")";
+        currentState = GameState.GameOver;
 
-        gameOverPanel.SetActive(true);
+        if (timerRoutine != null)
+        {
+            StopCoroutine(timerRoutine);
+        }
+
+        UIManager.Instance.ShowGameOver(
+            FormatTime(timeLimit - currentTime),
+            crashCount,
+            reason
+        );
+
         Time.timeScale = 0f;
     }
 
     public void TriggerLevelComplete(float accuracy = 1.0f)
     {
-        if (!isGameActive) return;
-        isGameActive = false;
+        if (currentState != GameState.Playing) return;
 
-        if (nextLevelTimeText) nextLevelTimeText.text = FormatTime(timeLimit - currentTime);
-        if (nextLevelCrashText) nextLevelCrashText.text = "CRASHES: " + crashCount;
+        currentState = GameState.LevelComplete;
 
-        // Score Calculation
+        if (timerRoutine != null)
+            StopCoroutine(timerRoutine);
+
         int finalScore = 500 + Mathf.RoundToInt(currentTime * 10) - (crashCount * 50);
-        if (nextLevelScoreText) nextLevelScoreText.text = "SCORE: " + Mathf.Max(0, finalScore);
+        finalScore = Mathf.Max(0, finalScore);
 
-        nextLevelPanel.SetActive(true);
+        UIManager.Instance.ShowLevelComplete(
+            FormatTime(timeLimit - currentTime),
+            crashCount,
+            finalScore
+        );
+
         Time.timeScale = 0f;
-
-        // Check for Last Level
-        int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
-        if (currentSceneIndex >= lastLevelIndex)
-        {
-            if (nextLevelButton != null) nextLevelButton.SetActive(false);
-        }
     }
 
-    
+
 
     public void RestartLevel()
     {
