@@ -2,11 +2,9 @@
 using System.Collections;
 using UnityEngine.AI;
 
-
 public class CarSpawner : MonoBehaviour
 {
     [Header("Car Settings")]
-    public GameObject[] carPrefabs;
     public RoadNode[] spawnNodes;
 
     [Header("Spawn Settings")]
@@ -16,48 +14,64 @@ public class CarSpawner : MonoBehaviour
 
     private int currentCars = 0;
 
+    // ─────────────────────────────────────────────────────────────────────────
     void Start()
     {
         StartCoroutine(SpawnRoutine());
     }
 
+    // ── Called by LevelConfig ─────────────────────────────────────────────────
+    public void SetMaxCars(int count, float speedMultiplier)
+    {
+        maxCars = count;
+
+        // Apply speed multiplier to all cars already active in the scene
+        foreach (GameObject car in AICarPool.Instance.GetActiveCars())
+        {
+            if (car == null) continue;
+            var agent = car.GetComponent<NavMeshAgent>();
+            if (agent == null) continue;
+
+            var tracker = car.GetComponent<AISpeedTracker>();
+            if (tracker == null)
+            {
+                tracker = car.AddComponent<AISpeedTracker>();
+                tracker.baseSpeed = agent.speed;
+            }
+            agent.speed = tracker.baseSpeed * speedMultiplier;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     IEnumerator SpawnRoutine()
     {
         while (true)
         {
             if (currentCars < maxCars)
                 SpawnCar();
-
             yield return new WaitForSeconds(spawnInterval);
         }
     }
 
     void SpawnCar()
     {
-        if (carPrefabs.Length == 0 || spawnNodes.Length == 0)
-            return;
+        if (spawnNodes.Length == 0) return;
 
         RoadNode spawnNode = spawnNodes[Random.Range(0, spawnNodes.Length)];
-
         if (spawnNode == null)
         {
             Debug.LogWarning("CarSpawner: Null spawn node found.");
             return;
         }
 
-
         Collider[] hits = Physics.OverlapSphere(spawnNode.transform.position, spawnCheckRadius);
         foreach (Collider hit in hits)
-        {
-            if (hit.GetComponent<AICar>() != null)
-                return;
-        }
-
+            if (hit.GetComponent<AICar>() != null) return;
 
         NavMeshHit navHit;
         if (!NavMesh.SamplePosition(spawnNode.transform.position, out navHit, 5f, NavMesh.AllAreas))
         {
-            Debug.LogWarning("CarSpawner: Spawn node " + spawnNode.name + " is not near NavMesh. Skipping.");
+            Debug.LogWarning("CarSpawner: Spawn node " + spawnNode.name + " is not near NavMesh.");
             return;
         }
 
@@ -66,17 +80,11 @@ public class CarSpawner : MonoBehaviour
 
     IEnumerator SpawnCarAfterDelay(RoadNode spawnNode, Vector3 spawnPosition)
     {
-
         yield return null;
         yield return null;
 
         GameObject car = AICarPool.Instance.GetCar();
-
-        if (car == null)
-        {
-            Debug.LogWarning("CarPool empty!");
-            yield break;
-        }
+        if (car == null) { Debug.LogWarning("CarPool empty!"); yield break; }
 
         car.transform.position = spawnPosition;
         car.transform.rotation = spawnNode.transform.rotation;
@@ -84,16 +92,12 @@ public class CarSpawner : MonoBehaviour
         NavMeshAgent agent = car.GetComponent<NavMeshAgent>();
         AICar ai = car.GetComponent<AICar>();
 
-        agent.Warp(spawnPosition);
-        agent.isStopped = false;
-
         if (agent == null)
         {
             Debug.LogError(car.name + ": Missing NavMeshAgent!");
             AICarPool.Instance.ReturnCar(car);
             yield break;
         }
-
         if (ai == null)
         {
             Debug.LogError(car.name + ": Missing AICar!");
@@ -101,10 +105,11 @@ public class CarSpawner : MonoBehaviour
             yield break;
         }
 
+        agent.Warp(spawnPosition);
+        agent.isStopped = false;
 
         yield return null;
         yield return null;
-
 
         if (!agent.isOnNavMesh)
         {
@@ -114,27 +119,23 @@ public class CarSpawner : MonoBehaviour
             yield return null;
         }
 
-
         if (!agent.isOnNavMesh)
         {
-            Debug.LogError(car.name + ": Failed to attach to NavMesh at " + spawnPosition +
-                   ". Make sure your spawn nodes are placed ON the blue NavMesh surface.");
+            Debug.LogError(car.name + ": Failed to attach to NavMesh at " + spawnPosition);
             AICarPool.Instance.ReturnCar(car);
             yield break;
         }
 
-
         agent.Warp(spawnPosition);
-
-
         ai.currentNode = spawnNode;
 
-
-        
+        // Apply current speed multiplier to newly spawned car
+        var tracker = car.GetComponent<AISpeedTracker>();
+        if (tracker != null)
+            agent.speed = tracker.baseSpeed;
 
         currentCars++;
-        //Debug.Log("Car spawned: " + car.name + " | isOnNavMesh: " + agent.isOnNavMesh + " | Total: " + currentCars);
-    }
+    }
 
     public void OnCarDestroyed()
     {

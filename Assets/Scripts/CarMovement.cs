@@ -1,8 +1,8 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class CarMovement : MonoBehaviour
 {
-    
+
     [Header("Wheel Colliders")]
     public WheelCollider frontLeftWheel;
     public WheelCollider frontRightWheel;
@@ -15,24 +15,28 @@ public class CarMovement : MonoBehaviour
     public Transform rearLeftTransform;
     public Transform rearRightTransform;
 
-    
+
     [Header("Engine")]
-    public float motorForce = 1200f;   
-    public float maxSpeedKMH = 60f;     
+    public float motorForce = 1200f;
+    public float maxSpeedKMH = 60f;
 
     [Header("Steering")]
-    public float maxSteerAngle = 28f;     
-    public float steerSpeed = 5f;      
-
+    public float maxSteerAngle = 28f;
+    public float steerSpeed = 5f;
     public AnimationCurve steerCurve = AnimationCurve.Linear(0, 1f, 100f, 0.35f);
 
     [Header("Brakes")]
-    public float brakeForce = 8000f;  
+    public float brakeForce = 8000f;
     public float handbrakeForce = 5000f;
-    public float engineBraking = 300f;   
+    // ── Engine braking fix ─────────────────────────────────────────────────────
+    // Previously this value was written in HandleMotor and then immediately
+    // overwritten to 0 in the HandleBrakesAndDrift else-branch, so engine
+    // braking had no effect.  It is now applied inside HandleBrakesAndDrift
+    // (the last function to write brakeTorque) so it is never discarded.
+    public float engineBraking = 300f;
 
     [Header("Stability")]
-    public float antiRollStrength = 3000f; 
+    public float antiRollStrength = 3000f;
     public Vector3 centerOfMass = new Vector3(0f, -0.4f, 0.1f);
 
     [Header("Drift")]
@@ -40,34 +44,28 @@ public class CarMovement : MonoBehaviour
     public float normalSideStiffness = 1.8f;
     public float driftSpeedThreshold = 20f;
 
-    
+
     private Rigidbody rb;
-    private float currentSteerAngle;   
+    private float currentSteerAngle;
     private float horizontalInput;
     private float verticalInput;
     private bool isBraking;
     private bool isHandbraking;
 
-    
     public float SpeedKMH => rb.velocity.magnitude * 3.6f;
 
-    
+
+    // ────────────────────────────────────────────────────────────────────────────
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-
-        
         rb.centerOfMass = centerOfMass;
-
-        
         rb.drag = 0.05f;
-        rb.angularDrag= 0.3f;
-
-        
+        rb.angularDrag = 0.3f;
         SetupWheelFriction();
     }
 
-    
+
     void Update()
     {
         horizontalInput = Input.GetAxis("Horizontal");
@@ -76,82 +74,67 @@ public class CarMovement : MonoBehaviour
         isHandbraking = Input.GetKey(KeyCode.LeftShift);
     }
 
-    
+
     void FixedUpdate()
     {
         HandleMotor();
         HandleSteering();
-        HandleBrakesAndDrift();
-        ApplyAntiRoll();         
+        HandleBrakesAndDrift();   // ← must run AFTER HandleMotor; owns all brakeTorque writes
+        ApplyAntiRoll();
         SyncWheelMeshes();
     }
 
-    
+
+    // ────────────────────────────────────────────────────────────────────────────
     void HandleMotor()
     {
         float speed = SpeedKMH;
-        float torque = 0f;
-
-        if (speed < maxSpeedKMH)
-            torque = verticalInput * motorForce;
+        float torque = (speed < maxSpeedKMH) ? verticalInput * motorForce : 0f;
 
         rearLeftWheel.motorTorque = torque;
         rearRightWheel.motorTorque = torque;
 
-        
-        if (Mathf.Abs(verticalInput) < 0.05f)
-        {
-            rearLeftWheel.brakeTorque = engineBraking;
-            rearRightWheel.brakeTorque = engineBraking;
-        }
+        // brakeTorque is intentionally NOT set here — HandleBrakesAndDrift owns it.
     }
 
-    
+
     void HandleSteering()
     {
         float speed = SpeedKMH;
-
-        
         float speedFactor = steerCurve.Evaluate(speed);
         float targetAngle = maxSteerAngle * horizontalInput * speedFactor;
 
-        
         currentSteerAngle = Mathf.Lerp(
             currentSteerAngle,
             targetAngle,
-            Time.fixedDeltaTime * steerSpeed * (speed < 5f ? 2f : 1f)  
+            Time.fixedDeltaTime * steerSpeed * (speed < 5f ? 2f : 1f)
         );
 
         frontLeftWheel.steerAngle = currentSteerAngle;
         frontRightWheel.steerAngle = currentSteerAngle;
     }
 
-   
+
+    // ────────────────────────────────────────────────────────────────────────────
     void HandleBrakesAndDrift()
     {
         float speed = SpeedKMH;
 
-        
         if (isBraking)
         {
-            
+            // Full braking on all four wheels
             frontLeftWheel.brakeTorque = brakeForce;
             frontRightWheel.brakeTorque = brakeForce;
             rearLeftWheel.brakeTorque = brakeForce;
             rearRightWheel.brakeTorque = brakeForce;
 
-            
             rearLeftWheel.motorTorque = 0f;
             rearRightWheel.motorTorque = 0f;
 
-            
-            if (speed > driftSpeedThreshold)
-                SetSidewaysStiffness(driftStiffness);
-            else
-                SetSidewaysStiffness(normalSideStiffness);
+            SetSidewaysStiffness(speed > driftSpeedThreshold
+                ? driftStiffness
+                : normalSideStiffness);
         }
-
-        
         else if (isHandbraking)
         {
             frontLeftWheel.brakeTorque = 0f;
@@ -162,18 +145,24 @@ public class CarMovement : MonoBehaviour
             if (speed > 10f)
                 SetSidewaysStiffness(driftStiffness);
         }
-
-        
         else
         {
+            // ── Engine braking ─────────────────────────────────────────────────
+            // Apply only when the driver releases the throttle and the car is
+            // moving.  Using a tiny dead-zone (0.05) avoids fighting gentle inputs.
+            float engBrake = (Mathf.Abs(verticalInput) < 0.05f && speed > 1f)
+                             ? engineBraking
+                             : 0f;
+
             frontLeftWheel.brakeTorque = 0f;
             frontRightWheel.brakeTorque = 0f;
-            rearLeftWheel.brakeTorque = 0f;
-            rearRightWheel.brakeTorque = 0f;
+            rearLeftWheel.brakeTorque = engBrake;
+            rearRightWheel.brakeTorque = engBrake;
 
             SetSidewaysStiffness(normalSideStiffness);
         }
     }
+
 
     void SetSidewaysStiffness(float stiffness)
     {
@@ -190,7 +179,8 @@ public class CarMovement : MonoBehaviour
         wheel.sidewaysFriction = curve;
     }
 
-    
+
+    // ────────────────────────────────────────────────────────────────────────────
     void ApplyAntiRoll()
     {
         ApplyAntiRollToAxle(frontLeftWheel, frontRightWheel);
@@ -203,22 +193,27 @@ public class CarMovement : MonoBehaviour
         bool rightGrounded = rightWheel.GetGroundHit(out WheelHit rightHit);
 
         float leftTravel = leftGrounded
-            ? (-leftWheel.transform.InverseTransformPoint(leftHit.point).y - leftWheel.radius) / leftWheel.suspensionDistance
+            ? (-leftWheel.transform.InverseTransformPoint(leftHit.point).y
+               - leftWheel.radius) / leftWheel.suspensionDistance
             : 1f;
 
         float rightTravel = rightGrounded
-            ? (-rightWheel.transform.InverseTransformPoint(rightHit.point).y - rightWheel.radius) / rightWheel.suspensionDistance
+            ? (-rightWheel.transform.InverseTransformPoint(rightHit.point).y
+               - rightWheel.radius) / rightWheel.suspensionDistance
             : 1f;
 
         float antiRollForce = (leftTravel - rightTravel) * antiRollStrength;
 
         if (leftGrounded)
-            rb.AddForceAtPosition(leftWheel.transform.up * -antiRollForce, leftWheel.transform.position);
+            rb.AddForceAtPosition(leftWheel.transform.up * -antiRollForce,
+                                  leftWheel.transform.position);
         if (rightGrounded)
-            rb.AddForceAtPosition(rightWheel.transform.up * antiRollForce, rightWheel.transform.position);
+            rb.AddForceAtPosition(rightWheel.transform.up * antiRollForce,
+                                  rightWheel.transform.position);
     }
 
-    
+
+    // ────────────────────────────────────────────────────────────────────────────
     void SyncWheelMeshes()
     {
         SyncWheel(frontLeftWheel, frontLeftTransform);
@@ -234,12 +229,13 @@ public class CarMovement : MonoBehaviour
         t.SetPositionAndRotation(pos, rot);
     }
 
-    
+
+    // ────────────────────────────────────────────────────────────────────────────
     void SetupWheelFriction()
     {
-        foreach (var wheel in new[] { frontLeftWheel, frontRightWheel, rearLeftWheel, rearRightWheel })
+        foreach (var wheel in new[] { frontLeftWheel, frontRightWheel,
+                                      rearLeftWheel,  rearRightWheel })
         {
-            
             WheelFrictionCurve fwd = wheel.forwardFriction;
             fwd.extremumSlip = 0.4f;
             fwd.extremumValue = 1f;
@@ -248,7 +244,6 @@ public class CarMovement : MonoBehaviour
             fwd.stiffness = 1.5f;
             wheel.forwardFriction = fwd;
 
-            
             WheelFrictionCurve side = wheel.sidewaysFriction;
             side.extremumSlip = 0.25f;
             side.extremumValue = 1f;
@@ -258,4 +253,4 @@ public class CarMovement : MonoBehaviour
             wheel.sidewaysFriction = side;
         }
     }
-}
+}                   
